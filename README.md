@@ -102,8 +102,8 @@ phishing-guard-pro/
 ├── main.py                 # 后端入口：FastAPI app, 数据库定义, 业务逻辑
 ├── model_architecture.py   # 模型定义：FMPEDModel 双流网络结构
 ├── feature_extractor.py    # 特征工程：BERT处理与硬规则提取类
-├── train_real.py           # 训练脚本：数据加载、对抗训练循环
-├── index.html              # 前端入口：Vue3 + Tailwind 单页应用
+├── train.py           # 训练脚本：数据加载、对抗训练循环
+├── index2.html              # 前端入口：Vue3 + Tailwind 单页应用
 ├── fmped_model.pth         # [生成] 训练好的模型权重
 ├── phishing_logs.db        # [生成] SQLite 数据库文件
 ├── requirements.txt        # 依赖列表
