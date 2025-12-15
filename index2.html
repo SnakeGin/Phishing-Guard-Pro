@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phishing Guard Pro | 钓鱼邮箱检测中心</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { 
+                        sans: ['Inter', 'sans-serif'], 
+                        mono: ['JetBrains Mono', 'monospace'],
+                        heading: ['Inter', 'ui-sans-serif', 'system-ui']
+                    },
+                    colors: { 
+                        primary: { 
+                            50: '#eff6ff', 
+                            100: '#dbeafe', 
+                            500: '#3b82f6', 
+                            600: '#2563eb', 
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a'
+                        },
+                        secondary: { 
+                            50: '#f8fafc', 
+                            100: '#f1f5f9', 
+                            200: '#e2e8f0', 
+                            800: '#1e293b', 
+                            900: '#0f172a',
+                            950: '#020617'
+                        },
+                        cyber: {
+                            blue: '#00f5ff',
+                            purple: '#7c3aed',
+                            pink: '#ec4899',
+                            cyan: '#06b6d4',
+                            indigo: '#4f46e5'
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                        'scan': 'scan 2s linear infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        glow: {
+                            'from': { 'box-shadow': '0 0 10px #00f5ff, 0 0 20px #00f5ff' },
+                            'to': { 'box-shadow': '0 0 20px #00f5ff, 0 0 40px #00f5ff' }
+                        },
+                        scan: {
+                            '0%': { transform: 'translateY(-100%)' },
+                            '100%': { transform: 'translateY(100%)' }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' }
+                        }
+                    },
+                    backgroundImage: {
+                        'grid-pattern': 'linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px)',
+                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                        'cyber-gradient': 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #00f5ff 100%)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --cyber-blue: #00f5ff;
+            --cyber-purple: #7c3aed;
+            --cyber-pink: #ec4899;
+        }
+        
+        body { 
+            background: #0a0e17; 
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        [v-cloak] { display: none; }
+        
+        /* 科技感滚动条 */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(30, 41, 59, 0.5); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { 
+            background: linear-gradient(180deg, #3b82f6, #7c3aed); 
+            border-radius: 10px;
+            border: 2px solid rgba(15, 23, 42, 0.5);
+        }
+        ::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #60a5fa, #8b5cf6); }
+        
+        /* 赛博朋克玻璃拟态 */
+        .cyber-glass {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        .cyber-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2),
+                        0 2px 4px -1px rgba(0, 0, 0, 0.1),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        
+        /* 数据流效果 */
+        .data-stream {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .data-stream::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent 30%,
+                rgba(59, 130, 246, 0.1) 50%,
+                transparent 70%
+            );
+            animation: scan 4s linear infinite;
+        }
+        
+        /* 霓虹文字效果 */
+        .neon-text {
+            text-shadow: 0 0 5px currentColor,
+                         0 0 10px currentColor,
+                         0 0 20px currentColor;
+        }
+        
+        .neon-blue {
+            color: #00f5ff;
+            text-shadow: 0 0 5px #00f5ff,
+                         0 0 10px #00f5ff,
+                         0 0 20px #00f5ff;
+        }
+        
+        .neon-purple {
+            color: #8b5cf6;
+            text-shadow: 0 0 5px #8b5cf6,
+                         0 0 10px #8b5cf6,
+                         0 0 20px #8b5cf6;
+        }
+        
+        /* 网格背景 */
+        .grid-bg {
+            background-image: 
+                linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        
+        /* 科技感按钮 */
+        .cyber-btn {
+            background: linear-gradient(135deg, #3b82f6, #7c3aed);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .cyber-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
+        
+        .cyber-btn:hover::before {
+            left: 100%;
+        }
+        
+        .cyber-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+        }
+        
+        /* Tab样式增强 */
+        .cyber-tab {
+            position: relative;
+            color: #94a3b8;
+            transition: all 0.3s;
+            padding: 0.5rem 1rem;
+        }
+        
+        .cyber-tab.active {
+            color: #00f5ff;
+            font-weight: 600;
+        }
+        
+        .cyber-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, #00f5ff, #7c3aed);
+            border-radius: 2px;
+            box-shadow: 0 0 10px #00f5ff;
+        }
+        
+        /* 进度条科技感 */
+        .cyber-progress {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .cyber-progress::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(59, 130, 246, 0.2) 50%, 
+                transparent 100%);
+            animation: scan 2s linear infinite;
+        }
+        
+        /* 指标卡片 */
+        .metric-card {
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.9));
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            position: relative;
+        }
+        
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+        }
+        
+        /* 威胁等级光晕 */
+        .threat-glow {
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        .threat-high { animation: glow 1.5s ease-in-out infinite alternate; }
+        .threat-medium { animation: glow 2s ease-in-out infinite alternate; }
+        .threat-low { animation: glow 3s ease-in-out infinite alternate; }
+    </style>
+</head>
+<body class="h-screen overflow-hidden flex">
+
+    <!-- 背景装饰 -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute inset-0 grid-bg"></div>
+        <div class="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-cyan-500/10 to-transparent"></div>
+        <div class="absolute bottom-0 right-0 w-96 h-96 bg-gradient-radial from-purple-500/10 via-transparent to-transparent"></div>
+        
+        <!-- 浮动粒子 -->
+        <div class="absolute top-1/4 left-1/4 w-2 h-2 bg-cyan-500 rounded-full animate-float" style="animation-delay: 0s;"></div>
+        <div class="absolute top-1/3 right-1/4 w-1 h-1 bg-purple-500 rounded-full animate-float" style="animation-delay: 1s;"></div>
+        <div class="absolute bottom-1/4 left-1/3 w-1.5 h-1.5 bg-blue-500 rounded-full animate-float" style="animation-delay: 2s;"></div>
+    </div>
+
+    <div id="app" v-cloak class="w-full h-full flex relative z-10">
+        
+        <!-- 侧边栏 -->
+        <aside class="w-80 h-full flex-shrink-0 cyber-glass border-r border-cyan-500/20 flex flex-col z-20">
+            <!-- 顶部Logo区域 -->
+            <div class="p-6 bg-gradient-to-b from-slate-900 to-slate-950 border-b border-cyan-500/20">
+                <div class="flex items-center gap-4">
+                    <div class="relative">
+                        <div class="w-12 h-12 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/20 animate-pulse-slow">
+                            <i class="fa-solid fa-shield-halved text-xl text-white"></i>
+                        </div>
+                        <div class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full border-2 border-slate-950 animate-pulse"></div>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent tracking-tight">Phishing Guard Pro</h1>
+                        <!-- <p class="text-xs text-slate-400 font-mono tracking-widest mt-1">THREAT INTEL v3.1</p> -->
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center justify-between">
+                    <div class="text-xs text-slate-400">
+                        <span class="flex items-center gap-1">
+                            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                            <span>系统在线</span>
+                        </span>
+                    </div>
+                    <button @click="fetchHistory" class="text-slate-400 hover:text-cyan-400 transition-colors p-1.5 hover:bg-slate-800/50 rounded-lg">
+                        <i class="fa-solid fa-rotate text-sm"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 检测日志标题 -->
+            <div class="px-5 py-3.5 border-b border-slate-800/50 bg-slate-900/30 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-history text-cyan-400 text-sm"></i>
+                    <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">检测日志</h3>
+                </div>
+                <span class="text-xs bg-slate-800 text-cyan-400 px-2 py-0.5 rounded font-mono border border-slate-700">
+                    {{ historyList.length }}
+                </span>
+            </div>
+
+            <!-- 日志列表 -->
+            <div class="flex-1 overflow-y-auto">
+                <div v-if="historyList.length === 0" class="text-center py-16 text-slate-500">
+                    <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-800/50 flex items-center justify-center border border-slate-700">
+                        <i class="fa-regular fa-folder-open text-2xl"></i>
+                    </div>
+                    <p class="text-sm">暂无检测记录</p>
+                    <p class="text-xs text-slate-600 mt-1">上传邮件开始分析</p>
+                </div>
+                
+                <div v-for="item in historyList" :key="item.id" 
+                     @click="loadHistoryItem(item)" 
+                     :class="{'active-item bg-slate-800/60 border-l-2 border-cyan-500': currentRecord && currentRecord.id === item.id}"
+                     class="p-4 border-b border-slate-800/30 hover:bg-slate-800/40 cursor-pointer transition-all group relative overflow-hidden">
+                    <!-- 数据流光效 -->
+                    <div class="absolute inset-0 data-stream opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    
+                    <div class="relative flex justify-between items-start mb-2">
+                        <div class="flex-1 min-w-0 pr-2">
+                            <div class="flex items-center gap-2 mb-1">
+                                <i class="fa-regular fa-envelope text-slate-500 text-xs"></i>
+                                <span class="font-medium text-slate-200 truncate block text-sm group-hover:text-cyan-300 transition-colors">
+                                    {{ item.filename }}
+                                </span>
+                            </div>
+                            <span class="text-xs text-slate-400 font-mono">{{ formatDate(item.created_at) }}</span>
+                        </div>
+                        <div class="flex flex-col items-end gap-1">
+                            <span :class="getScoreBadge(item.risk_score)" 
+                                  class="text-xs px-2 py-1 rounded font-bold font-mono border">
+                                {{ item.risk_score.toFixed(0) }}
+                            </span>
+                            <span class="text-[10px] px-1.5 py-0.5 rounded font-bold" :class="getVerdictColor(item.verdict)">
+                                {{ item.verdict }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 上传按钮区域 -->
+            <div class="p-5 border-t border-slate-800/50 bg-slate-900/30">
+                <button @click="resetView" 
+                        class="w-full cyber-btn text-white font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-3 group">
+                    <i class="fa-solid fa-plus group-hover:rotate-90 transition-transform"></i>
+                    <span class="tracking-wide">新邮件检测</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="flex-1 h-full overflow-y-auto relative p-6 md:p-8">
+            <!-- 主背景装饰 -->
+            <div class="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-cyan-500/5 via-purple-500/5 to-transparent pointer-events-none"></div>
+            
+            <!-- 上传区域 -->
+            <div v-if="!currentRecord && !isLoading" class="h-full flex flex-col justify-center items-center max-w-3xl mx-auto animate__animated animate__fadeIn">
+                <div class="text-center mb-12">
+                    <div class="relative inline-block mb-8">
+                        <div class="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full blur-xl opacity-30 animate-pulse"></div>
+                        <div class="relative p-6 bg-slate-900/80 rounded-full border border-cyan-500/30 shadow-2xl">
+                            <i class="fa-solid fa-cloud-arrow-up text-5xl bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent"></i>
+                        </div>
+                    </div>
+                    <h2 class="text-4xl font-bold text-slate-100 mb-4 tracking-tight">上传邮件样本分析</h2>
+                    <p class="text-slate-400 text-lg max-w-2xl mx-auto">
+                        双流神经网络将分析 <span class="neon-text text-cyan-400 font-semibold">LLM生成特征</span> 
+                        与 <span class="neon-text text-purple-400 font-semibold">传统攻击指纹</span>，实现深度威胁检测
+                    </p>
+                </div>
+
+                <!-- 上传框 -->
+                <div class="w-full relative group">
+                    <div class="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-2xl blur opacity-30 group-hover:opacity-70 transition duration-1000 group-hover:duration-200"></div>
+                    <div class="relative cyber-glass rounded-2xl border-2 border-dashed border-cyan-500/30 hover:border-cyan-500/60 transition-all duration-300 h-80 flex flex-col items-center justify-center cursor-pointer">
+                        <input type="file" @change="handleFileUpload" accept=".eml,.msg" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                        <div class="mb-6 text-cyan-500/60 group-hover:text-cyan-400 transition-colors transform group-hover:scale-110 duration-300">
+                            <i class="fa-regular fa-file-code text-6xl"></i>
+                        </div>
+                        <p class="text-slate-200 text-xl font-medium group-hover:text-cyan-300 mb-2">拖拽或点击上传文件</p>
+                        <p class="text-sm text-slate-500 group-hover:text-slate-400">支持标准 .eml / .msg 格式</p>
+                        <div class="mt-8 flex items-center gap-6 text-sm text-slate-500">
+                            <span class="flex items-center gap-2">
+                                <i class="fa-solid fa-brain text-cyan-400"></i>
+                                <span>语义分析</span>
+                            </span>
+                            <span class="flex items-center gap-2">
+                                <i class="fa-solid fa-code text-purple-400"></i>
+                                <span>HTML取证</span>
+                            </span>
+                            <span class="flex items-center gap-2">
+                                <i class="fa-solid fa-link text-cyan-400"></i>
+                                <span>链接扫描</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 加载状态 -->
+            <div v-if="isLoading" class="h-full flex flex-col justify-center items-center animate__animated animate__fadeIn">
+                <div class="relative mb-10">
+                    <div class="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full blur-xl opacity-20 animate-pulse"></div>
+                    <div class="relative w-32 h-32">
+                        <div class="absolute inset-0 border-4 border-cyan-500/20 rounded-full"></div>
+                        <div class="absolute inset-0 border-4 border-transparent border-t-cyan-400 border-r-purple-400 rounded-full animate-spin"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <i class="fa-solid fa-brain text-4xl bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent animate-pulse"></i>
+                        </div>
+                    </div>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-100 mb-2">钓鱼特征分析中</h3>
+                <p class="text-slate-400 mb-6">神经网络正在执行全维扫描...</p>
+                <div class="w-64 h-1.5 cyber-progress rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full animate-pulse" style="width: 85%"></div>
+                </div>
+            </div>
+
+            <!-- 分析结果 -->
+            <div v-if="currentRecord" class="max-w-7xl mx-auto space-y-8 pb-16 animate__animated animate__fadeInUp">
+                <!-- 顶部结果卡片 -->
+                <div class="cyber-card rounded-2xl p-8 relative overflow-hidden">
+                    <!-- 装饰边框 -->
+                    <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent"></div>
+                    <div class="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500 to-transparent"></div>
+                    
+                    <div class="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
+                        <div class="flex-1">
+                            <div class="flex flex-wrap items-center gap-3 mb-4">
+                                <span class="px-3 py-1.5 bg-slate-800/50 rounded-lg border border-slate-700 text-sm text-slate-300 font-mono flex items-center gap-2">
+                                    <i class="fa-regular fa-file text-cyan-400"></i>
+                                    {{ currentRecord.filename }}
+                                </span>
+                                <span class="px-3 py-1.5 bg-slate-800/50 rounded-lg border border-slate-700 text-sm text-slate-300 font-mono flex items-center gap-2">
+                                    <i class="fa-regular fa-clock text-purple-400"></i>
+                                    {{ formatDateTime(currentRecord.created_at) }}
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <h2 class="text-5xl font-black tracking-tight" :class="getVerdictColor(currentRecord.verdict)">
+                                    {{ translateVerdict(currentRecord.verdict) }}
+                                </h2>
+                                <div :class="getVerdictIconClass(currentRecord.verdict)" 
+                                     class="text-4xl animate__animated animate__pulse">
+                                    <i :class="getVerdictIcon(currentRecord.verdict)"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <div class="relative inline-block">
+                                <div class="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full blur animate-pulse opacity-50"></div>
+                                <div class="relative text-7xl font-black text-white neon-text" 
+                                     :class="getScoreColor(currentRecord.risk_score)">
+                                    {{ currentRecord.risk_score.toFixed(1) }}
+                                </div>
+                            </div>
+                            <div class="text-sm font-bold text-slate-400 uppercase tracking-widest mt-2">综合风险评分</div>
+                            <div :class="'threat-' + currentRecord.risk_level.toLowerCase()" 
+                                 class="text-xs font-bold mt-1" 
+                                 :class="getThreatLevelColor(currentRecord.risk_level)">
+                                {{ currentRecord.risk_level }} THREAT
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 标签页导航 -->
+                <div class="flex gap-1 border-b border-slate-800/50 px-2">
+                    <button @click="currentTab = 'report'" 
+                            :class="{'active': currentTab === 'report'}" 
+                            class="cyber-tab flex items-center gap-3">
+                        <i class="fa-solid fa-radar"></i>
+                        <span>分析报告</span>
+                    </button>
+                    <button @click="currentTab = 'preview'" 
+                            :class="{'active': currentTab === 'preview'}" 
+                            class="cyber-tab flex items-center gap-3">
+                        <i class="fa-solid fa-code-branch"></i>
+                        <span>邮件原文预览</span>
+                    </button>
+                    <button @click="currentTab = 'details'" 
+                            :class="{'active': currentTab === 'details'}" 
+                            class="cyber-tab flex items-center gap-3">
+                        <i class="fa-solid fa-microscope"></i>
+                        <span>深度取证数据</span>
+                    </button>
+                </div>
+
+                <!-- 报告标签页 -->
+                <div v-show="currentTab === 'report'" class="grid grid-cols-1 lg:grid-cols-12 gap-8 animate__animated animate__fadeIn">
+                    <!-- 左侧区域 -->
+                    <div class="lg:col-span-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- 威胁指数仪表盘 -->
+                        <div class="metric-card rounded-2xl p-6 lg:col-span-2">
+                            <div class="flex items-center justify-between mb-6">
+                                <h4 class="text-lg font-bold text-slate-100 flex items-center gap-3">
+                                    <i class="fa-solid fa-gauge-high text-cyan-400"></i>
+                                    威胁指数模型
+                                </h4>
+                                <span class="text-xs bg-slate-800 text-cyan-400 px-3 py-1 rounded-full border border-slate-700 font-mono">
+                                    FMPED
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-center">
+                                <div ref="gaugeChartRef" class="w-full h-64"></div>
+                            </div>
+                        </div>
+
+                        <!-- 概率分析 -->
+                        <div class="metric-card rounded-2xl p-6">
+                            <h4 class="text-lg font-bold text-slate-100 mb-6 flex items-center gap-3">
+                                <i class="fa-solid fa-brain text-cyan-400"></i>
+                                AI 生成概率分析
+                            </h4>
+                            <div class="space-y-8">
+                                <div>
+                                    <div class="flex justify-between items-center mb-3">
+                                        <span class="text-slate-300 font-medium">LLM 伪造概率</span>
+                                        <span class="text-2xl font-bold neon-text text-cyan-400">
+                                            {{ calculateLLMProb(currentRecord) }}<span class="text-lg">%</span>
+                                        </span>
+                                    </div>
+                                    <div class="cyber-progress h-3 rounded-full overflow-hidden">
+                                        <div class="h-full bg-gradient-to-r from-cyan-500 to-cyan-300 rounded-full progress-bar" 
+                                             :style="{ width: calculateLLMProb(currentRecord) + '%' }"></div>
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-2">基于 BERT 语义困惑度与风格指纹分析</p>
+                                </div>
+                                
+                                <div>
+                                    <div class="flex justify-between items-center mb-3">
+                                        <span class="text-slate-300 font-medium">传统攻击特征</span>
+                                        <span class="text-2xl font-bold neon-text text-purple-400">
+                                            {{ calculateHardRisk(currentRecord) }}<span class="text-lg">%</span>
+                                        </span>
+                                    </div>
+                                    <div class="cyber-progress h-3 rounded-full overflow-hidden">
+                                        <div class="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full progress-bar" 
+                                             :style="{ width: calculateHardRisk(currentRecord) + '%' }"></div>
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-2">含 URL / HTML / 诱导词等硬规则匹配</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 防御建议 -->
+                        <div class="metric-card rounded-2xl p-6 bg-gradient-to-br from-slate-900/80 to-slate-950/80">
+                            <div class="flex items-center justify-between mb-6">
+                                <h4 class="text-lg font-bold text-slate-100 flex items-center gap-3">
+                                    <i class="fa-solid fa-robot text-cyan-400"></i>
+                                    智能防御建议
+                                </h4>
+                                <span class="text-xs bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-cyan-300 px-3 py-1 rounded-full border border-cyan-500/30 font-mono">
+                                    Powered by DeepSeek-R1-0528-Qwen3-8B
+                                </span>
+                            </div>
+                            <div class="text-slate-300 leading-relaxed space-y-4" v-html="formatSuggestion(currentRecord.defense_suggestion)"></div>
+                        </div>
+                    </div>
+
+                    <!-- 右侧指纹统计 -->
+                    <div class="lg:col-span-4">
+                        <div class="metric-card rounded-2xl p-6 h-full">
+                            <h4 class="text-lg font-bold text-slate-100 mb-8 flex items-center gap-3">
+                                <i class="fa-solid fa-fingerprint text-purple-400"></i>
+                                关键指纹统计
+                            </h4>
+                            <div class="space-y-6">
+                                <div class="flex items-center justify-between p-4 rounded-xl bg-slate-800/30 border border-slate-700/50 hover:border-cyan-500/30 transition-colors">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+                                            <i class="fa-solid fa-link text-cyan-400"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-slate-300 font-medium">恶意 URL</div>
+                                            <div class="text-xs text-slate-500">检测到的可疑链接</div>
+                                        </div>
+                                    </div>
+                                    <span class="text-2xl font-bold text-cyan-400">{{ currentRecord.features_summary.url_count || 0 }}</span>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-4 rounded-xl bg-slate-800/30 border border-slate-700/50 hover:border-purple-500/30 transition-colors">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+                                            <i class="fa-solid fa-server text-purple-400"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-slate-300 font-medium">高危 IP 链接</div>
+                                            <div class="text-xs text-slate-500">直接 IP 地址访问</div>
+                                        </div>
+                                    </div>
+                                    <span class="text-2xl font-bold" :class="currentRecord.features_summary.suspicious_ip_urls > 0 ? 'neon-text text-purple-400' : 'text-slate-600'">
+                                        {{ currentRecord.features_summary.suspicious_ip_urls || 0 }}
+                                    </span>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-4 rounded-xl bg-slate-800/30 border border-slate-700/50 hover:border-cyan-500/30 transition-colors">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+                                            <i class="fa-solid fa-code text-cyan-400"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-slate-300 font-medium">HTML 隐藏元素</div>
+                                            <div class="text-xs text-slate-500">iframe / 隐藏脚本</div>
+                                        </div>
+                                    </div>
+                                    <span class="text-sm font-bold px-3 py-1.5 rounded-full" 
+                                          :class="currentRecord.features_summary.has_iframe ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-green-500/20 text-green-400 border border-green-500/30'">
+                                        {{ currentRecord.features_summary.has_iframe ? 'DETECTED' : 'SAFE' }}
+                                    </span>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-4 rounded-xl bg-slate-800/30 border border-slate-700/50 hover:border-purple-500/30 transition-colors">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+                                            <i class="fa-solid fa-bullhorn text-purple-400"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-slate-300 font-medium">诱导性关键词</div>
+                                            <div class="text-xs text-slate-500">心理操纵术语</div>
+                                        </div>
+                                    </div>
+                                    <span class="text-2xl font-bold text-purple-400">{{ currentRecord.features_summary.keyword_hits || 0 }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 邮件预览标签页 -->
+                <div v-if="currentTab === 'preview'" class="animate__animated animate__fadeIn">
+                    <div class="cyber-card rounded-2xl overflow-hidden h-[600px] flex flex-col">
+                        <div class="px-6 py-4 bg-slate-900/80 border-b border-slate-800 flex justify-between items-center">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center justify-center">
+                                    <i class="fa-solid fa-shield-virus text-green-400"></i>
+                                </div>
+                                <div>
+                                    <div class="text-slate-100 font-medium">安全沙箱模式</div>
+                                    <div class="text-xs text-slate-500">脚本执行已阻断 | 安全隔离环境</div>
+                                </div>
+                            </div>
+                            <button @click="copyContent" 
+                                    class="cyber-btn px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+                                <i class="fa-regular fa-copy"></i>
+                                <span>复制源码</span>
+                            </button>
+                        </div>
+                        <iframe :srcdoc="currentRecord.email_content" sandbox="allow-popups" 
+                                class="w-full h-full border-none bg-white"></iframe>
+                    </div>
+                </div>
+
+                <!-- 取证数据标签页 -->
+                <div v-if="currentTab === 'details'" class="animate__animated animate__fadeIn">
+                    <div class="cyber-card rounded-2xl p-8">
+                        <div class="flex items-center gap-4 mb-10 pb-6 border-b border-slate-800">
+                            <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-cyan-500/20 flex items-center justify-center">
+                                <i class="fa-solid fa-magnifying-glass text-2xl bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-2xl font-bold text-slate-100">深度取证日志</h4>
+                                <p class="text-slate-400">提取到的原始攻击特征与上下文关联分析</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div v-if="currentRecord.forensic_data && currentRecord.forensic_data.length > 0">
+                                <div v-for="(log, index) in currentRecord.forensic_data" :key="index" 
+                                     class="p-5 rounded-xl bg-slate-800/30 border border-slate-700/50 hover:border-cyan-500/30 transition-all group">
+                                    <div class="flex gap-4">
+                                        <div class="flex-shrink-0">
+                                            <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/10 to-purple-500/10 text-cyan-400 text-sm font-bold border border-cyan-500/20 group-hover:border-cyan-500/50 transition-colors">
+                                                {{ index + 1 }}
+                                            </span>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-slate-300 font-mono leading-relaxed" v-html="formatForensicLog(log)"></p>
+                                            <div class="mt-3 pt-3 border-t border-slate-800/50 flex items-center gap-4 text-xs text-slate-500">
+                                                <span class="flex items-center gap-1">
+                                                    <i class="fa-regular fa-clock"></i>
+                                                    {{ formatDateTime(currentRecord.created_at) }}
+                                                </span>
+                                                <span class="flex items-center gap-1">
+                                                    <i class="fa-solid fa-layer-group"></i>
+                                                    深度分析引擎
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div v-else class="text-center py-16 rounded-xl border-2 border-dashed border-slate-800 bg-slate-900/20">
+                                <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 flex items-center justify-center">
+                                    <i class="fa-solid fa-check text-3xl text-green-400"></i>
+                                </div>
+                                <h5 class="text-xl font-bold text-slate-100 mb-2">未检测到硬规则特征</h5>
+                                <p class="text-slate-400 max-w-md mx-auto">系统未提取到特定的 URL、HTML 标签或强特征指纹，表明邮件可能为正常通信</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const { createApp, ref, shallowRef, onMounted, onUnmounted, nextTick, watch } = Vue;
+
+        createApp({
+            setup() {
+                const historyList = ref([]);
+                const currentRecord = ref(null);
+                const isLoading = ref(false);
+                const currentTab = ref('report');
+                const gaugeChartRef = ref(null);
+                const chartInstance = shallowRef(null);
+
+                const debounce = (fn, delay) => { let timer; return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); }; };
+
+                const fetchHistory = async () => {
+                    try {
+                        const res = await axios.get('http://127.0.0.1:8000/api/history');
+                        historyList.value = res.data.slice(0, 50);
+                    } catch (e) { 
+                        console.error('加载历史记录失败:', e);
+                        if(historyList.value.length === 0) {
+                            historyList.value = [{
+                                id: 1, 
+                                filename: "demo_alert.eml", 
+                                risk_score: 15.5, 
+                                verdict: "Safe", 
+                                risk_level: "Low", 
+                                created_at: new Date().toISOString(),
+                                features_summary: { url_count: 0, suspicious_ip_urls: 0, has_iframe: false, keyword_hits: 0 },
+                                forensic_data: [],
+                                defense_suggestion: "**安全邮件** - 未检测到明显威胁特征，建议保持常规安全意识即可。"
+                            }];
+                        }
+                    }
+                };
+
+                const handleFileUpload = async (event) => {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    const input = event.target;
+                    isLoading.value = true;
+                    currentRecord.value = null;
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    try {
+                        const res = await axios.post('http://127.0.0.1:8000/api/analyze-file', formData, { 
+                            headers: { 'Content-Type': 'multipart/form-data' } 
+                        });
+                        const newRecord = { 
+                            id: res.data.id || Date.now(), 
+                            filename: file.name, 
+                            ...res.data,
+                            forensic_data: res.data.forensic_data || [],
+                            features_summary: res.data.features_summary || {},
+                            created_at: new Date().toISOString()
+                        };
+                        currentRecord.value = newRecord;
+                        currentTab.value = 'report';
+                        await fetchHistory();
+                    } catch (e) { 
+                        console.error('分析失败:', e);
+                        alert("分析失败: " + e.message); 
+                    } 
+                    finally { 
+                        isLoading.value = false; 
+                        input.value = ''; 
+                    }
+                };
+
+                const loadHistoryItem = (item) => { 
+                    currentRecord.value = item; 
+                    currentTab.value = 'report'; 
+                };
+                
+                const resetView = () => { 
+                    currentRecord.value = null; 
+                    disposeChart(); 
+                };
+
+                // 计算逻辑
+                const calculateHardRisk = (r) => {
+                    const f = r.features_summary || {};
+                    let s = 0;
+                    if (f.url_count > 0) s += Math.min(40, f.url_count * 10);
+                    if (f.suspicious_ip_urls > 0) s += Math.min(50, f.suspicious_ip_urls * 25);
+                    if (f.has_iframe) s += 30;
+                    if (f.keyword_hits > 0) s += Math.min(30, f.keyword_hits * 8);
+                    return Math.min(100, s);
+                };
+                
+                const calculateLLMProb = (r) => {
+                    const hard = calculateHardRisk(r);
+                    let diff = Math.max(0, r.risk_score - hard);
+                    return Math.min(99, Math.floor(diff * 1.2)); 
+                };
+
+                // 图表
+                const initChart = () => { 
+                    if (!gaugeChartRef.value) return; 
+                    disposeChart(); 
+                    chartInstance.value = echarts.init(gaugeChartRef.value); 
+                };
+                
+                const disposeChart = () => { 
+                    if (chartInstance.value) { 
+                        chartInstance.value.dispose(); 
+                        chartInstance.value = null; 
+                    } 
+                };
+                
+                const renderGauge = (score) => {
+                    if (!chartInstance.value) initChart();
+                    if (!chartInstance.value) return;
+                    
+                    const color = score > 75 ? '#ef4444' : (score > 45 ? '#f59e0b' : '#10b981');
+                    const gradientColor = score > 75 ? 
+                        new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                            { offset: 0, color: '#ef4444' },
+                            { offset: 1, color: '#dc2626' }
+                        ]) : score > 45 ? 
+                        new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                            { offset: 0, color: '#f59e0b' },
+                            { offset: 1, color: '#d97706' }
+                        ]) :
+                        new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                            { offset: 0, color: '#10b981' },
+                            { offset: 1, color: '#059669' }
+                        ]);
+                    
+                    chartInstance.value.setOption({
+                        series: [{
+                            type: 'gauge', 
+                            startAngle: 180, 
+                            endAngle: 0, 
+                            min: 0, 
+                            max: 100, 
+                            radius: '100%', 
+                            center: ['50%', '75%'],
+                            itemStyle: { 
+                                color: gradientColor,
+                                shadowBlur: 10,
+                                shadowColor: color
+                            }, 
+                            progress: { 
+                                show: true, 
+                                width: 14, 
+                                roundCap: true,
+                                itemStyle: {
+                                    shadowBlur: 10,
+                                    shadowColor: color
+                                }
+                            },
+                            pointer: { 
+                                show: true,
+                                length: '60%',
+                                width: 4,
+                                itemStyle: {
+                                    color: '#ffffff',
+                                    shadowBlur: 8,
+                                    shadowColor: color
+                                }
+                            }, 
+                            axisLine: { 
+                                lineStyle: { 
+                                    width: 14, 
+                                    color: [[1, 'rgba(30, 41, 59, 0.8)']],
+                                    shadowBlur: 0
+                                } 
+                            },
+                            axisTick: { 
+                                show: false 
+                            }, 
+                            splitLine: { 
+                                show: false 
+                            }, 
+                            axisLabel: { 
+                                show: true,
+                                distance: 25,
+                                color: '#94a3b8',
+                                fontSize: 12,
+                                formatter: (value) => {
+                                    if (value === 0) return '安全';
+                                    if (value === 50) return '可疑';
+                                    if (value === 100) return '高危';
+                                    return '';
+                                }
+                            }, 
+                            detail: { 
+                                show: true,
+                                offsetCenter: [0, '30%'],
+                                color: '#ffffff',
+                                fontSize: 32,
+                                fontWeight: 'bold',
+                                formatter: '{value}'
+                            },
+                            data: [{ value: score }]
+                        }]
+                    });
+                };
+                
+                const handleResize = debounce(() => { 
+                    if (chartInstance.value) chartInstance.value.resize(); 
+                }, 200);
+
+                // 样式和格式化函数
+                const getScoreBadge = (s) => 
+                    s > 75 ? 'bg-red-500/10 text-red-400 border-red-500/30' : 
+                    s > 45 ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' : 
+                    'bg-green-500/10 text-green-400 border-green-500/30';
+                
+                const getVerdictColor = (v) => 
+                    v === 'Phishing' ? 'neon-text text-red-400' : 
+                    v === 'Suspicious' ? 'neon-text text-amber-400' : 
+                    'neon-text text-green-400';
+                
+                const getScoreColor = (s) =>
+                    s > 75 ? 'text-red-400' :
+                    s > 45 ? 'text-amber-400' :
+                    'text-green-400';
+                
+                const getProgressColor = (l) => 
+                    l === 'High' ? 'bg-gradient-to-r from-red-500 to-red-600' : 
+                    l === 'Medium' ? 'bg-gradient-to-r from-amber-500 to-amber-600' : 
+                    'bg-gradient-to-r from-green-500 to-green-600';
+                
+                const getVerdictIcon = (v) => 
+                    v === 'Phishing' ? 'fa-solid fa-triangle-exclamation' : 
+                    v === 'Suspicious' ? 'fa-solid fa-circle-exclamation' : 
+                    'fa-solid fa-check-circle';
+                
+                const getVerdictIconClass = (v) =>
+                    v === 'Phishing' ? 'text-red-400' :
+                    v === 'Suspicious' ? 'text-amber-400' :
+                    'text-green-400';
+                
+                const getThreatLevelColor = (l) =>
+                    l === 'High' ? 'text-red-400' :
+                    l === 'Medium' ? 'text-amber-400' :
+                    'text-green-400';
+                
+                const translateVerdict = (v) => 
+                    v === 'Phishing' ? '高危钓鱼' : 
+                    v === 'Suspicious' ? '可疑邮件' : 
+                    '安全邮件';
+                
+                const formatSuggestion = (t) => {
+                    if (!t) return '<span class="text-gray-400 italic">无建议</span>';
+                    return t
+                        .replace(/\*\*(.*?)\*\*/g, '<strong class="text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">$1</strong>')
+                        .replace(/### (.*)/g, '<h4 class="font-bold text-slate-100 mt-6 mb-3 text-lg">$1</h4>')
+                        .replace(/\n\n/g, '</p><p class="mt-3">')
+                        .replace(/\n/g, '<br/>')
+                        .replace(/- (.*)/g, '<li class="ml-4 list-disc marker:text-cyan-400 mb-2 pl-2">$1</li>');
+                };
+
+                const formatForensicLog = (log) => {
+                    if (!log) return '';
+                    let formatted = log
+                        .replace(/(⚠️|🚫|🔓|🎣|🕵️‍♂️)/g, '<span class="text-xl mr-2 inline-block transform scale-110">$1</span>')
+                        .replace(/IP/g, '<span class="font-bold text-purple-400">IP</span>')
+                        .replace(/URL/g, '<span class="font-bold text-cyan-400">URL</span>')
+                        .replace(/http[s]?:\/\/[^\s]+/g, '<span class="text-cyan-400 underline decoration-dotted hover:text-cyan-300 transition-colors">$1</span>')
+                        .replace(/高危/g, '<span class="text-red-400 font-bold">高危</span>')
+                        .replace(/可疑/g, '<span class="text-amber-400 font-bold">可疑</span>')
+                        .replace(/安全/g, '<span class="text-green-400 font-bold">安全</span>');
+                    
+                    if (log.includes("未检测到") || log.includes("✅")) {
+                        formatted = `<span class="text-green-400">${formatted}</span>`;
+                    } else if (log.includes("检测到") || log.includes("⚠️")) {
+                        formatted = `<span class="text-amber-400">${formatted}</span>`;
+                    }
+                    
+                    return formatted;
+                };
+
+                const formatDate = (d) => new Date(d).toLocaleDateString('zh-CN', { 
+                    month:'2-digit', 
+                    day:'2-digit', 
+                    hour:'2-digit', 
+                    minute:'2-digit' 
+                });
+                
+                const formatDateTime = (d) => new Date(d).toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                
+                const copyContent = () => {
+                    if(currentRecord.value?.email_content) {
+                        navigator.clipboard.writeText(currentRecord.value.email_content);
+                        alert("邮件源码已复制到剪贴板");
+                    }
+                };
+
+                onMounted(() => { 
+                    fetchHistory(); 
+                    window.addEventListener('resize', handleResize); 
+                });
+                
+                onUnmounted(() => { 
+                    window.removeEventListener('resize', handleResize); 
+                    disposeChart(); 
+                });
+
+                watch(currentRecord, (newVal) => { 
+                    if (newVal && currentTab.value === 'report') {
+                        nextTick(() => renderGauge(newVal.risk_score)); 
+                    }
+                });
+                
+                watch(currentTab, (newVal) => { 
+                    if (newVal === 'report' && currentRecord.value) {
+                        nextTick(() => { 
+                            disposeChart(); 
+                            renderGauge(currentRecord.value.risk_score); 
+                        }); 
+                    }
+                });
+
+                return {
+                    historyList,
+                    currentRecord,
+                    isLoading,
+                    currentTab,
+                    gaugeChartRef,
+                    fetchHistory,
+                    handleFileUpload,
+                    loadHistoryItem,
+                    resetView,
+                    copyContent,
+                    getScoreBadge,
+                    getVerdictColor,
+                    getScoreColor,
+                    getProgressColor,
+                    getVerdictIcon,
+                    getVerdictIconClass,
+                    getThreatLevelColor,
+                    translateVerdict,
+                    formatSuggestion,
+                    formatForensicLog,
+                    formatDate,
+                    formatDateTime,
+                    calculateLLMProb,
+                    calculateHardRisk
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
