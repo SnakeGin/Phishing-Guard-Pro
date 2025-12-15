@@ -141,7 +141,7 @@ phishing-guard-pro/
 ### 3. 详细取证数据 (Forensic Data)
 
 后端提取的详细攻击指纹，如恶意链接、IP直连等证据。
-![详细取证数据](pic\1.png)
+![详细取证数据](pic\1,png)
 
 ### 4. 邮件原文预览 (Sandboxed Preview)
 
